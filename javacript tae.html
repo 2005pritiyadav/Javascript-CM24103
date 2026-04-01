@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Location Selector</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #0f2027, #2c5364);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 15px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+        }
+
+        h2 {
+            color: #2c5364;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #bbb;
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: #2c5364;
+            box-shadow: 0 0 5px #2c5364;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #2c5364;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #1b3945;
+        }
+
+        #dashboard { display: none; }
+
+        .card {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #e6f7ff;
+            display: none;
+        }
+
+        .highlight {
+            color: #2c5364;
+            font-weight: bold;
+        }
+
+        /* Validation styles */
+        .error {
+            border: 2px solid #e63946;
+            background: #ffe5e5;
+        }
+
+        .success {
+            border: 2px solid #2a9d8f;
+            background: #e9fff7;
+        }
+
+        .msg {
+            font-size: 12px;
+            text-align: left;
+            margin-top: -5px;
+            margin-bottom: 6px;
+        }
+
+        .error-text { color: #e63946; }
+        .success-text { color: #2a9d8f; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="box" id="loginBox">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="loginUser()">Login</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="box" id="dashboard">
+
+    <h2>User Details</h2>
+
+    <input type="text" id="fullname" placeholder="Full Name">
+    <div id="nameMsg" class="msg"></div>
+
+    <input type="text" id="email" placeholder="Email Address">
+    <div id="emailMsg" class="msg"></div>
+
+    <input type="text" id="mobile" placeholder="Mobile Number">
+    <div id="mobileMsg" class="msg"></div>
+
+    <input type="number" id="age" placeholder="Age">
+    <div id="ageMsg" class="msg"></div>
+
+    <button onclick="validateForm()">Save Details</button>
+
+    <h2>Select Location</h2>
+
+    <select id="state">
+        <option value="">Select State</option>
+        <option value="Maharashtra">Maharashtra</option>
+        <option value="Gujarat">Gujarat</option>
+        <option value="Karnataka">Karnataka</option>
+    </select>
+
+    <select id="city">
+        <option value="">Select City</option>
+    </select>
+
+    <div class="card" id="resultCard">
+        📍 You selected:<br>
+        State: <span class="highlight" id="showState"></span><br>
+        City: <span class="highlight" id="showCity"></span>
+    </div>
+
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+const data = {
+    Maharashtra: ["Pune", "Mumbai", "Nagpur"],
+    Gujarat: ["Ahmedabad", "Surat", "Vadodara"],
+    Karnataka: ["Bangalore", "Mysore", "Mangalore"]
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+    checkLogin();
+
+    const state = document.getElementById("state");
+    const city = document.getElementById("city");
+
+    state.addEventListener("change", function () {
+        city.innerHTML = '<option value="">Select City</option>';
+        if (data[this.value]) {
+            data[this.value].forEach(function (c) {
+                let option = document.createElement("option");
+                option.value = c;
+                option.textContent = c;
+                city.appendChild(option);
+            });
+        }
+        updateCard();
+    });
+
+    city.addEventListener("change", updateCard);
+});
+
+function updateCard() {
+    const state = document.getElementById("state").value;
+    const city = document.getElementById("city").value;
+
+    if (state && city) {
+        document.getElementById("resultCard").style.display = "block";
+        document.getElementById("showState").textContent = state;
+        document.getElementById("showCity").textContent = city;
+    } else {
+        document.getElementById("resultCard").style.display = "none";
+    }
+}
+
+/* Validation Functions */
+function setError(input, msgDiv, message) {
+    input.classList.add("error");
+    input.classList.remove("success");
+    msgDiv.textContent = message;
+    msgDiv.className = "msg error-text";
+}
+
+function setSuccess(input, msgDiv, message) {
+    input.classList.add("success");
+    input.classList.remove("error");
+    msgDiv.textContent = message;
+    msgDiv.className = "msg success-text";
+}
+
+function validateForm() {
+    let fullname = document.getElementById("fullname");
+    let email = document.getElementById("email");
+    let mobile = document.getElementById("mobile");
+    let age = document.getElementById("age");
+
+    let nameMsg = document.getElementById("nameMsg");
+    let emailMsg = document.getElementById("emailMsg");
+    let mobileMsg = document.getElementById("mobileMsg");
+    let ageMsg = document.getElementById("ageMsg");
+
+    let valid = true;
+
+    let namePattern = /^[A-Za-z\s]{3,}$/;
+    let emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+    let mobilePattern = /^[6-9]\d{9}$/;
+
+    if (!namePattern.test(fullname.value.trim())) {
+        setError(fullname, nameMsg, "Only letters, minimum 3 characters");
+        valid = false;
+    } else setSuccess(fullname, nameMsg, "Looks good");
+
+    if (!emailPattern.test(email.value.trim())) {
+        setError(email, emailMsg, "Invalid email format");
+        valid = false;
+    } else setSuccess(email, emailMsg, "Valid email");
+
+    if (!mobilePattern.test(mobile.value.trim())) {
+        setError(mobile, mobileMsg, "Enter 10-digit mobile starting 6-9");
+        valid = false;
+    } else setSuccess(mobile, mobileMsg, "Valid mobile");
+
+    if (age.value < 18 || age.value > 60) {
+        setError(age, ageMsg, "Age must be between 18 and 60");
+        valid = false;
+    } else setSuccess(age, ageMsg, "Valid age");
+
+    if (valid) {
+        alert("All details are valid ✅");
+    }
+}
+
+function loginUser() {
+    let user = document.getElementById("username").value.trim();
+    let pass = document.getElementById("password").value.trim();
+
+    if (user === "admin" && pass === "1234") {
+        localStorage.setItem("loggedIn", "true");
+        showDashboard();
+    } else {
+        alert("Invalid Login");
+    }
+}
+
+function checkLogin() {
+    if (localStorage.getItem("loggedIn") === "true") {
+        showDashboard();
+    }
+}
+
+function showDashboard() {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+}
+
+function logout() {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+}
+</script>
+
+</body>
+</html>
